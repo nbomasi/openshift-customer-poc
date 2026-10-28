@@ -1,0 +1,16 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: web
+  labels:
+    app: web
+    part-of: openshift-poc
+spec:
+  to:
+    kind: Service
+    name: web
+  port:
+    targetPort: http
+  tls:
+    termination: edge                       # TLS ends at the OpenShift router
+    insecureEdgeTerminationPolicy: Redirect # http:// is redirected to https://

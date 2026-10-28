@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db
+  labels:
+    app: db
+    part-of: openshift-poc
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate           # RWO volume can't attach to old and new pod at once (avoids Multi-Attach error)
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels:
+        app: db
+        part-of: openshift-poc
+    spec:
+      containers:
+        - name: postgresql
+          # Red Hat PostgreSQL image from the cluster's shared "openshift" namespace
+          image: image-registry.openshift-image-registry.svc:5000/openshift/postgresql:15-el9
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - secretRef:
+                name: db-creds
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            exec:
+              command: ["/bin/sh", "-c", "pg_isready -h 127.0.0.1 -p 5432"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["/bin/sh", "-c", "pg_isready -h 127.0.0.1 -p 5432"]
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          volumeMounts:
+            - name: db-data
+              mountPath: /var/lib/pgsql/data
+      volumes:
+        - name: db-data
+          persistentVolumeClaim:
+            claimName: db-data

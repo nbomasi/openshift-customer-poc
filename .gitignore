@@ -1,0 +1,2 @@
+# Real credentials never go to GitHub
+manifests/**/*secret.yaml

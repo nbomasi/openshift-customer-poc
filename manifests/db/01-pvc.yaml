@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: db-data
+  labels:
+    app: db
+    part-of: openshift-poc
+spec:
+  accessModes:
+    - ReadWriteOnce          # EBS volume: one node at a time
+  storageClassName: gp3      # cluster default; stays Pending until a pod uses it (WaitForFirstConsumer)
+  resources:
+    requests:
+      storage: 1Gi

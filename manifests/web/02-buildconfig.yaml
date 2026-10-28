@@ -1,0 +1,31 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: web
+  labels:
+    app: web
+    part-of: openshift-poc
+spec:
+  source:
+    type: Git
+    git:
+      uri: https://github.com/sclorg/django-ex.git
+      ref: 4.2.x
+  strategy:
+    type: Source               # S2I: build an image from source code, no Dockerfile
+    sourceStrategy:
+      from:
+        kind: ImageStreamTag
+        namespace: openshift
+        name: python:3.11-ubi9
+  output:
+    to:
+      kind: ImageStreamTag
+      name: web:latest
+  resources:
+    limits:
+      memory: 1Gi
+  triggers:
+    - type: ConfigChange       # build when this BuildConfig is created or changed
+    - type: ImageChange        # rebuild when Red Hat updates the Python builder image
+      imageChange: {}

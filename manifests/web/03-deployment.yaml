@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  labels:
+    app: web
+    part-of: openshift-poc
+  annotations:
+    # Roll out automatically whenever a new build pushes web:latest
+    image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"web:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"web\")].image"}]'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+        part-of: openshift-poc
+    spec:
+      containers:
+        - name: web
+          image: web:latest
+          ports:
+            - containerPort: 8080
+          env:
+            # The app finds PostgreSQL through the "db" Service (DB_SERVICE_HOST / DB_SERVICE_PORT)
+            - name: DATABASE_SERVICE_NAME
+              value: db
+            - name: DATABASE_ENGINE
+              value: postgresql
+            - name: DATABASE_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: db-creds
+                  key: POSTGRESQL_DATABASE
+            - name: DATABASE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-creds
+                  key: POSTGRESQL_USER
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-creds
+                  key: POSTGRESQL_PASSWORD
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 20
